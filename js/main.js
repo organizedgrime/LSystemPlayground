@@ -1,5 +1,5 @@
 // Initialize global variables
-var canv, properties, lsystem, rules;
+var canv, properties, lsystem, rules, hue;
 
 var initCanvas = function() {
 	// Initialize canvases
@@ -42,7 +42,7 @@ var drawLine = function(turtle) {
 	turtle.state[1] += Math.cos(turtle.state[2]) * properties.distance;
 	
 	ctx.lineTo(turtle.state[0], turtle.state[1]);
-	ctx.strokeStyle = "#FF0000"
+	ctx.strokeStyle = rgbToHex(hsvToRgb(hue, 1, 1));
 	ctx.stroke();
 	ctx.closePath();
 };
@@ -53,10 +53,12 @@ var renderer = function(lsystem) {
 		// Initial state
 		[canv.width/2.5, canv.height/4, -Math.PI / 2]
 	);
+	hue = 0;
 	for(var i = 0; i < lsystem.sentence.length; i++){
 		switch(lsystem.sentence.charAt(i)) {
 		case 'F':
 			drawLine(turtle);
+			hue += 0.00006;
 			break;
 		case '-':
 			turtle.state[2] += properties.angle;
@@ -77,7 +79,8 @@ var renderer = function(lsystem) {
 var animationLoop;
 (function(){
 animationLoop = function() {
-	ctx.clearRect(0, 0, canv.width, canv.height);
+	ctx.fillStyle = "black";
+	ctx.fillRect(0, 0, canv.width, canv.height);
 	renderer(lsystem);
 	requestAnimationFrame(animationLoop);
 };
