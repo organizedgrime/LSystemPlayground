@@ -1,6 +1,6 @@
 // Initialize global variables
-var canv, properties, lsystem, rules, hue, pos;
-var squareProperties = {angle: Math.PI/2, distance: 1000, divisor: 4};
+var canv, lsystem, hue, pos, maxIterations = 4;
+var squareProperties = {angle: Math.PI/2, distance: 0, divisor: 4};
 var exampleindex = 0;
 var examples = [
 	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-F-F+F'}, squareProperties),
@@ -23,15 +23,20 @@ var initCanvas = function() {
 
 	pos = [canv.width/2.5, canv.height/4];
 
-	configureEvents();
-
 	newSystem();
+	configureEvents();
+	configureGUI();
 	requestAnimationFrame(animationLoop);
 };
 
 var newSystem = function() {
-	lsystem = examples[exampleindex];
-	maxIterations = 4;
+	lsystem = Object.create(examples[exampleindex]);
+	runSystem();
+};
+
+var runSystem = function() {
+	lsystem.sentence = lsystem.axiom;
+	lsystem.properties.distance = 1000;
 	for(var i = 0; i < maxIterations; i++) {
 		lsystem.iterate();
 		lsystem.properties.distance /= lsystem.properties.divisor;
@@ -78,6 +83,29 @@ var renderer = function(lsystem) {
 			break;
 		}
 	}
+};
+
+var configureGUI = function() {
+	var datObj = {axiom: lsystem.axiom, rules: JSON.stringify(lsystem.rules), iterations: 4};
+
+	var gui = new dat.GUI();
+	var axiomCon = gui.add(datObj, 'axiom');
+	axiomCon.onFinishChange(function(value) {
+		lsystem.axiom = datObj.axiom;
+		runSystem();
+	});
+	var rulesCon = gui.add(datObj, 'rules');
+	rulesCon.onFinishChange(function(value) {
+		lsystem = new LSystem(lsystem.axiom, JSON.parse(datObj.rules), lsystem.properties);
+		console.log(lsystem.rules);
+		runSystem();
+	});
+	var iterationsCon = gui.add(datObj, 'iterations', 1, 6).step(1);
+	iterationsCon.onFinishChange(function(value) {
+		maxIterations = value;
+		runSystem();
+	});
+
 };
 
 var animationLoop;
