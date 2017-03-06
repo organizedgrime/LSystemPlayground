@@ -1,8 +1,9 @@
 // Initialize global variables
-var canv, lsystem, hue, pos, maxIterations = 4;
+var canv, lsystem, hue, pos, gui, maxIterations = 4;
 var squareProperties = {angle: Math.PI/2, distance: 0, divisor: 4};
 var exampleindex = 0;
 var examples = [
+	new LSystem('F-F-F-F-F-F', {'F':'F-F++F-F'}, {angle: Math.PI/3, distance: 0, divisor: 3}),
 	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-F-F+F'}, squareProperties),
 	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-FF'}, squareProperties),
 	new LSystem('F-F-F-F', {'F': 'FF-F+F-F-FF'}, squareProperties),
@@ -25,12 +26,14 @@ var initCanvas = function() {
 
 	newSystem();
 	configureEvents();
-	configureGUI();
 	requestAnimationFrame(animationLoop);
 };
 
 var newSystem = function() {
 	lsystem = Object.create(examples[exampleindex]);
+	if(gui)
+		gui.destroy();
+	configureGUI();
 	runSystem();
 };
 
@@ -86,10 +89,10 @@ var renderer = function(lsystem) {
 };
 
 var configureGUI = function() {
-	var datObj = {axiom: lsystem.axiom, rules: JSON.stringify(lsystem.rules), angle: lsystem.properties.angle, divisor: lsystem.properties.divisor};
+	var datObj = {axiom: lsystem.axiom, rules: JSON.stringify(lsystem.rules), angle: lsystem.properties.angle * (180/Math.PI), divisor: lsystem.properties.divisor};
 	var itObj = {iterations: maxIterations};
 
-	var gui = new dat.GUI();
+	gui = new dat.GUI();
 	var axiomCon = gui.add(datObj, 'axiom');
 	axiomCon.onFinishChange(function(value) {
 		lsystem.axiom = datObj.axiom;
@@ -98,13 +101,11 @@ var configureGUI = function() {
 	var rulesCon = gui.add(datObj, 'rules');
 	rulesCon.onFinishChange(function(value) {
 		lsystem = new LSystem(lsystem.axiom, JSON.parse(datObj.rules), lsystem.properties);
-		console.log(lsystem.rules);
 		runSystem();
 	});
-	var angleCon = gui.add(datObj, 'angle', 0, Math.PI/2);
+	var angleCon = gui.add(datObj, 'angle', 0, 180);
 	angleCon.onFinishChange(function(value) {
-		lsystem = new LSystem(lsystem.axiom, lsystem.rules, {angle: datObj.angle, distance: 0, divisor: lsystem.properties.divisor});
-		console.log(lsystem.rules);
+		lsystem = new LSystem(lsystem.axiom, lsystem.rules, {angle: datObj.angle * (Math.PI/180), distance: 0, divisor: lsystem.properties.divisor});
 		runSystem();
 	});
 	var iterationsCon = gui.add(itObj, 'iterations', 0, 6).step(1);
