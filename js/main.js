@@ -86,7 +86,8 @@ var renderer = function(lsystem) {
 };
 
 var configureGUI = function() {
-	var datObj = {axiom: lsystem.axiom, rules: JSON.stringify(lsystem.rules), iterations: 4};
+	var datObj = {axiom: lsystem.axiom, rules: JSON.stringify(lsystem.rules), angle: lsystem.properties.angle, divisor: lsystem.properties.divisor};
+	var itObj = {iterations: maxIterations};
 
 	var gui = new dat.GUI();
 	var axiomCon = gui.add(datObj, 'axiom');
@@ -100,7 +101,13 @@ var configureGUI = function() {
 		console.log(lsystem.rules);
 		runSystem();
 	});
-	var iterationsCon = gui.add(datObj, 'iterations', 1, 6).step(1);
+	var angleCon = gui.add(datObj, 'angle', 0, Math.PI/2);
+	angleCon.onFinishChange(function(value) {
+		lsystem = new LSystem(lsystem.axiom, lsystem.rules, {angle: datObj.angle, distance: 0, divisor: lsystem.properties.divisor});
+		console.log(lsystem.rules);
+		runSystem();
+	});
+	var iterationsCon = gui.add(itObj, 'iterations', 0, 6).step(1);
 	iterationsCon.onFinishChange(function(value) {
 		maxIterations = value;
 		runSystem();
