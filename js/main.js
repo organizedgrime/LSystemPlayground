@@ -1,18 +1,18 @@
 // Initialize global variables
 var canv, lsystem, gui;
-var guiproperties = { hue: 0, dhue: 0, pos: [], distance: 0, iterations: 0};
+var guiproperties = { hue: 0, dhue: 0, pos: [], zoom: 0, iterations: 0, rotation: 0 };
 var exampleindex = 0;
 var examples = [
-	new LSystem('F-F-F-F-F-F', {'F':'F-F++F-F'}, {angle: Math.PI/3, size: 55}),
-	new LSystem('FX', {'X': 'X+YF+', 'Y': '-FX-Y'}, {angle: Math.PI/2, size: 17000, defit: 11}),
-	new LSystem('+X', {'X': 'F−[[X]+X]+F[+FX]−X', 'F': 'FF'}, {angle: 25 * (Math.PI / 180), size: 400, defit: 6}),
-	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-F-F+F'}, {angle: Math.PI/2, size: 70, defit: 4}),
-	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-FF'}, {angle: Math.PI/2, size: 100, defit: 4}),
-	new LSystem('F-F-F-F', {'F': 'FF-F+F-F-FF'}, {angle: Math.PI/2, size: 100, defit: 4}),
-	new LSystem('F-F-F-F', {'F': 'FF-F--F-F'}, {angle: Math.PI/2, size: 100, defit: 4}),
-	new LSystem('F-F-F-F', {'F': 'F-FF--F-F'}, {angle: Math.PI/2, size: 250, defit: 4}),
-	new LSystem('F-F-F-F', {'F': 'F-F+F-F-F'}, {angle: Math.PI/2, size: 250, defit: 4}),
-	new LSystem('-L', {'L': 'LF+RFR+FL-F-LFLFL-FRFR+', 'R': '-LFLF+RFRFR+F+RF-LFL-FR'}, {angle: Math.PI/2, size: 100, defit: 4})
+	new LSystem('F-F-F-F-F-F', {'F':'F-F++F-F'}, {angle: Math.PI/3, zoom: 55}),
+	new LSystem('FX', {'X': 'X+YF+', 'Y': '-FX-Y'}, {angle: Math.PI/2, zoom: 17000, defit: 11}),
+	new LSystem('+X', {'X': 'F−[[X]+X]+F[+FX]−X', 'F': 'FF'}, {angle: 25 * (Math.PI / 180), zoom: 400, defit: 6}),
+	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-F-F+F'}, {angle: Math.PI/2, zoom: 70, defit: 4}),
+	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-FF'}, {angle: Math.PI/2, zoom: 100, defit: 4}),
+	new LSystem('F-F-F-F', {'F': 'FF-F+F-F-FF'}, {angle: Math.PI/2, zoom: 100, defit: 4}),
+	new LSystem('F-F-F-F', {'F': 'FF-F--F-F'}, {angle: Math.PI/2, zoom: 100, defit: 4}),
+	new LSystem('F-F-F-F', {'F': 'F-FF--F-F'}, {angle: Math.PI/2, zoom: 250, defit: 4}),
+	new LSystem('F-F-F-F', {'F': 'F-F+F-F-F'}, {angle: Math.PI/2, zoom: 250, defit: 4}),
+	new LSystem('-L', {'L': 'LF+RFR+FL-F-LFLFL-FRFR+', 'R': '-LFLF+RFRFR+F+RF-LFL-FR'}, {angle: Math.PI/2, zoom: 100, defit: 4})
 ];
 
 var initCanvas = function() {
@@ -23,7 +23,7 @@ var initCanvas = function() {
 	canv.width = window.innerWidth;
 	canv.height = window.innerHeight;
 
-	lsystem = new LSystem('', '{}', {angle: 0, size: 55});
+	lsystem = new LSystem('', '{}', {angle: 0});
 	configureGUI();
 	runSystem();
 	configureEvents();
@@ -32,11 +32,11 @@ var initCanvas = function() {
 
 var runSystem = function() {
 	lsystem.sentence = lsystem.axiom;
-	guiproperties.distance = lsystem.properties.size;
+	guiproperties.zoom = 50;
 	for(var i = 0; i < guiproperties.iterations; i++) {
 		lsystem.iterate();
 		//console.log(lsystem.rules);
-		guiproperties.distance /= 2;
+		guiproperties.zoom /= 2;
 	}
 
 	guiproperties.pos = [canv.width/2, canv.height/2];
@@ -46,8 +46,8 @@ var drawLine = function(turtle) {
 	ctx.beginPath();
 	ctx.moveTo(turtle.state[0], turtle.state[1]);
 	
-	turtle.state[0] += Math.sin(turtle.state[2] * (Math.PI / 180)) * guiproperties.distance;
-	turtle.state[1] += Math.cos(turtle.state[2] * (Math.PI / 180)) * guiproperties.distance;
+	turtle.state[0] += Math.sin(turtle.state[2] * (Math.PI / 180)) * guiproperties.zoom;
+	turtle.state[1] += Math.cos(turtle.state[2] * (Math.PI / 180)) * guiproperties.zoom;
 	
 	ctx.lineTo(turtle.state[0], turtle.state[1]);
 	ctx.strokeStyle = rgbToHex(hsvToRgb(guiproperties.hue, 1, 1));
@@ -59,7 +59,7 @@ var drawLine = function(turtle) {
 var renderer = function(lsystem) {
 	var turtle = new Turtle(
 		// Initial state
-		[guiproperties.pos[0], guiproperties.pos[1], -Math.PI / 2]
+		[guiproperties.pos[0], guiproperties.pos[1], guiproperties.rotation]
 	);
 	guiproperties.hue = 0;
 	for(var i = 0; i < lsystem.sentence.length; i++){
@@ -68,11 +68,15 @@ var renderer = function(lsystem) {
 			drawLine(turtle);
 			guiproperties.hue += (guiproperties.dhue / 10000);
 			break;
+		case 'G':
+			drawLine(turtle);
+			guiproperties.hue += (guiproperties.dhue / 10000);
+			break;
 		case '-':
-			turtle.state[2] += lsystem.properties.angle;
+			turtle.state[2] -= lsystem.properties.angle;
 			break; 
 		case '+':
-			turtle.state[2] -= lsystem.properties.angle;
+			turtle.state[2] += lsystem.properties.angle;
 			break;
 		case '[':
 			//console.log("before push: " + turtle.state);
@@ -98,20 +102,20 @@ var configureGUI = function() {
 	lfolder.add(lsystem.properties, 'angle', 0, 180);
 	
 	var afolder = gui.addFolder('Appearance');
-	afolder.add(guiproperties, 'dhue', 0, 10);
+	afolder.add(guiproperties, 'dhue', 0, 150);
 	afolder.add(guiproperties, 'iterations', 0, 16).step(1).onFinishChange(function(){runSystem();});
-	afolder.add(guiproperties, 'distance', 0, 1000);
+	afolder.add(guiproperties, 'zoom', 0, 100);
+	afolder.add(guiproperties, 'rotation', 0, 360);
 };
 
 /*
-	new LSystem("+X", {"X": "F−[[X]+X]+F[+FX]−X", "F": "FF"}, {angle: 25 * (Math.PI / 180), size: 400, defit: 6}),
-	new LSystem("F-F-F-F", {"F": "FF-F-F-F-F-F+F"}, {angle: Math.PI/2, size: 70, defit: 4}),
-	new LSystem("F-F-F-F", {"F": "FF-F-F-F-FF"}, {angle: Math.PI/2, size: 100, defit: 4}),
-	new LSystem("F-F-F-F", {"F": "FF-F+F-F-FF"}, {angle: Math.PI/2, size: 100, defit: 4}),
-	new LSystem("F-F-F-F", {"F": "FF-F--F-F"}, {angle: Math.PI/2, size: 100, defit: 4}),
-	new LSystem("F-F-F-F", {"F": "F-FF--F-F"}, {angle: Math.PI/2, size: 250, defit: 4}),
-	new LSystem("F-F-F-F", {"F": "F-F+F-F-F"}, {angle: Math.PI/2, size: 250, defit: 4}),
-	new LSystem("-L", {"L": "LF+RFR+FL-F-LFLFL-FRFR+", "R": "-LFLF+RFRFR+F+RF-LFL-FR"}, {angle: Math.PI/2, size: 100, defit: 4})
+	new LSystem("F-F-F-F", {"F": "FF-F-F-F-F-F+F"}, {angle: Math.PI/2, zoom: 70, defit: 4}),
+	new LSystem("F-F-F-F", {"F": "FF-F-F-F-FF"}, {angle: Math.PI/2, zoom: 100, defit: 4}),
+	new LSystem("F-F-F-F", {"F": "FF-F+F-F-FF"}, {angle: Math.PI/2, zoom: 100, defit: 4}),
+	new LSystem("F-F-F-F", {"F": "FF-F--F-F"}, {angle: Math.PI/2, zoom: 100, defit: 4}),
+	new LSystem("F-F-F-F", {"F": "F-FF--F-F"}, {angle: Math.PI/2, zoom: 250, defit: 4}),
+	new LSystem("F-F-F-F", {"F": "F-F+F-F-F"}, {angle: Math.PI/2, zoom: 250, defit: 4}),
+	new LSystem("-L", {"L": "LF+RFR+FL-F-LFLFL-FRFR+", "R": "-LFLF+RFRFR+F+RF-LFL-FR"}, {angle: Math.PI/2, zoom: 100, defit: 4})
 */
 
 var getPresetJSON = function() {
@@ -130,7 +134,38 @@ var getPresetJSON = function() {
 				'2': {
 					'iterations': 4,
 					'dhue': 6,
-					'distance': 55
+					'zoom': 4,
+					'rotation': 0
+				}
+			},
+			'Serpinski Triangle': {
+				'0': {
+					'angle': 120
+				},
+				'1': {
+					'axiom': 'F-G-G',
+					'rules': '{"F":"F-G+F+G-F", "G":"GG"}'
+				},
+				'2': {
+					'iterations': 4,
+					'dhue': 40,
+					'zoom': 30,
+					'rotation': 150
+				}
+			},
+			'Serpinski Curve': {
+				'0': {
+					'angle': 60
+				},
+				'1': {
+					'axiom': 'F',
+					'rules': '{"F":"+G-F-G+", "G":"-F+G+F-"}'
+				},
+				'2': {
+					'iterations': 6,
+					'dhue': 12,
+					'zoom': 7,
+					'rotation': 90
 				}
 			},
 			'Dragon': {
@@ -144,7 +179,38 @@ var getPresetJSON = function() {
 				'2': {
 					'iterations': 11,
 					'dhue': 4.2,
-					'distance': 17
+					'zoom': 17,
+					'rotation': 135
+				}
+			},
+			'Hilbert': {
+				'0': {
+					'angle': 90
+				},
+				'1': {
+					'axiom': 'L',
+					'rules': '{"L": "+RF-LFL-FR+", "R": "-LF+RFR+FL-"}'
+				},
+				'2': {
+					'iterations': 3,
+					'dhue': 123,
+					'zoom': 70,
+					'rotation': 90
+				}
+			},
+			'Tree': {
+				'0': {
+					'angle': 25
+				},
+				'1': {
+					'axiom': 'X',
+					'rules': '{"X": "F-[[X]+X]+F[+FX]-X", "F": "FF"}'
+				},
+				'2': {
+					'iterations': 6,
+					'dhue': 4.2,
+					'zoom': 1.3,
+					'rotation': 180
 				}
 			}
 		},

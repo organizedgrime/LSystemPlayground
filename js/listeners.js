@@ -1,6 +1,4 @@
 function configureEvents() {
-	//addEvent(window, 'resize', onResizeWindow);
-	addEvent(window, 'keydown', onKeyDown);
 	addEvent(window, 'wheel', onScroll);
 	addEvent(window, 'mousemove', onMouseMove);
 }
@@ -22,7 +20,7 @@ function pan(deltaX, deltaY) {
 }
 
 function zoom(factor) {
-	guiproperties.distance /= factor;
+	guiproperties.zoom /= factor;
 }
 
 function onMouseMove() {
