@@ -17,12 +17,12 @@ function addEvent(object, type, callback) {
 };
 
 function pan(deltaX, deltaY) {
-	pos[0] += deltaX;
-	pos[1] += deltaY;	
+	guiproperties.pos[0] += deltaX;
+	guiproperties.pos[1] += deltaY;	
 }
 
 function zoom(factor) {
-	distance /= factor;
+	guiproperties.distance /= factor;
 }
 
 function onMouseMove() {
@@ -32,29 +32,11 @@ function onMouseMove() {
 }
 
 function onScroll() {
+	zoomspeed = 0.05;
 	if(event.deltaY < 0) {
-		zoom(0.95);
+		zoom(1 - zoomspeed);
 	}
 	else {
-		zoom(1.05);
-	}
-}
-
-function onKeyDown() {
-	switch(event.keyCode) {
-		case 38:
-			if(exampleindex == examples.length - 1)
-				exampleindex = 0;
-			else
-				exampleindex++;
-			newSystem();
-			break;
-		case 40:
-			if(exampleindex == 0)
-				exampleindex = examples.length - 1;
-			else
-				exampleindex--;
-			newSystem();
-			break;
+		zoom(1 + zoomspeed);
 	}
 }

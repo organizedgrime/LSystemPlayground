@@ -6,11 +6,12 @@ class LSystem {
 		this.properties = properties;
 		this.iterate = function() {
 			var newSentence = "";
+			var rulesJSON = JSON.parse(this.rules);
 			for(var index in this.sentence) {
 				var swapped = false;
-				for(var rule in rules) {
+				for(var rule in rulesJSON) {
 					if(this.sentence.substring(index, this.sentence.length).indexOf(rule) === 0) {
-						newSentence += rules[rule];
+						newSentence += rulesJSON[rule];
 						this.sentence.slice(rule.length);
 						swapped = true;
 						break;
