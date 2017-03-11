@@ -1,17 +1,17 @@
 // Initialize global variables
-var canv, lsystem, hue, pos, gui, maxIterations = 4;
-var squareProperties = {angle: Math.PI/2, distance: 0, divisor: 4};
+var canv, lsystem, hue, pos, gui, distance, maxIterations;
 var exampleindex = 0;
 var examples = [
-	new LSystem('F-F-F-F-F-F', {'F':'F-F++F-F'}, {angle: Math.PI/3, distance: 0, divisor: 3}),
-	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-F-F+F'}, squareProperties),
-	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-FF'}, squareProperties),
-	new LSystem('F-F-F-F', {'F': 'FF-F+F-F-FF'}, squareProperties),
-	new LSystem('F-F-F-F', {'F': 'FF-F--F-F'}, squareProperties),
-	new LSystem('F-F-F-F', {'F': 'F-FF--F-F'}, squareProperties),
-	new LSystem('F-F-F-F', {'F': 'F-F+F-F-F'}, squareProperties),
-	new LSystem('-L', {'L': 'LF+RFR+FL-F-LFLFL-FRFR+', 'R': '-LFLF+RFRFR+F+RF-LFL-FR'}, squareProperties),
-	new LSystem('-L', {'L': 'LFLF+RFR+FLFL-FRF-LFL-FR+F+RF-LFL-FRFRFR+', 'R': '-LFLFLF+RFR+FL-F-LF+RFR+FLF+RFRF-LFL-FRFR'}, squareProperties)
+	new LSystem('F-F-F-F-F-F', {'F':'F-F++F-F'}, {angle: Math.PI/3, size: 55, defit: 4}),
+	new LSystem('FX', {'X': 'X+YF+', 'Y': '-FX-Y'}, {angle: Math.PI/2, size: 17000, defit: 11}),
+	new LSystem('+X', {'X': 'F−[[X]+X]+F[+FX]−X', 'F': 'FF'}, {angle: 25 * (Math.PI / 180), size: 400, defit: 6}),
+	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-F-F+F'}, {angle: Math.PI/2, size: 70, defit: 4}),
+	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-FF'}, {angle: Math.PI/2, size: 100, defit: 4}),
+	new LSystem('F-F-F-F', {'F': 'FF-F+F-F-FF'}, {angle: Math.PI/2, size: 100, defit: 4}),
+	new LSystem('F-F-F-F', {'F': 'FF-F--F-F'}, {angle: Math.PI/2, size: 100, defit: 4}),
+	new LSystem('F-F-F-F', {'F': 'F-FF--F-F'}, {angle: Math.PI/2, size: 250, defit: 4}),
+	new LSystem('F-F-F-F', {'F': 'F-F+F-F-F'}, {angle: Math.PI/2, size: 250, defit: 4}),
+	new LSystem('-L', {'L': 'LF+RFR+FL-F-LFLFL-FRFR+', 'R': '-LFLF+RFRFR+F+RF-LFL-FR'}, {angle: Math.PI/2, size: 100, defit: 4})
 ];
 
 var initCanvas = function() {
@@ -22,7 +22,7 @@ var initCanvas = function() {
 	canv.width = window.innerWidth;
 	canv.height = window.innerHeight;
 
-	pos = [canv.width/2.5, canv.height/4];
+
 
 	newSystem();
 	configureEvents();
@@ -30,7 +30,9 @@ var initCanvas = function() {
 };
 
 var newSystem = function() {
+	//console.log("final size: " + lsystem.properties.size);
 	lsystem = Object.create(examples[exampleindex]);
+	maxIterations = lsystem.properties.defit;
 	if(gui)
 		gui.destroy();
 	configureGUI();
@@ -39,19 +41,22 @@ var newSystem = function() {
 
 var runSystem = function() {
 	lsystem.sentence = lsystem.axiom;
-	lsystem.properties.distance = 1000;
+	distance = lsystem.properties.size;
 	for(var i = 0; i < maxIterations; i++) {
 		lsystem.iterate();
-		lsystem.properties.distance /= lsystem.properties.divisor;
+		distance /= 2;
 	}
+
+
+	pos = [canv.width/2, canv.height/2];
 };
 
 var drawLine = function(turtle) {
 	ctx.beginPath();
 	ctx.moveTo(turtle.state[0], turtle.state[1]);
 	
-	turtle.state[0] += Math.sin(turtle.state[2]) * lsystem.properties.distance;
-	turtle.state[1] += Math.cos(turtle.state[2]) * lsystem.properties.distance;
+	turtle.state[0] += Math.sin(turtle.state[2]) * distance;
+	turtle.state[1] += Math.cos(turtle.state[2]) * distance;
 	
 	ctx.lineTo(turtle.state[0], turtle.state[1]);
 	ctx.strokeStyle = rgbToHex(hsvToRgb(hue, 1, 1));
@@ -79,21 +84,25 @@ var renderer = function(lsystem) {
 			turtle.state[2] -= lsystem.properties.angle;
 			break;
 		case '[':
+			//console.log("before push: " + turtle.state);
 			turtle.stack.push(JSON.parse(JSON.stringify(turtle.state)));
 			break;
 		case ']':
 			turtle.state = turtle.stack.pop();
+			//console.log("after pop: " + turtle.state);
 			break;
 		}
 	}
 };
 
 var configureGUI = function() {
-	var datObj = {axiom: lsystem.axiom, rules: JSON.stringify(lsystem.rules), angle: lsystem.properties.angle * (180/Math.PI), divisor: lsystem.properties.divisor};
+	var datObj = {axiom: lsystem.axiom, rules: JSON.stringify(lsystem.rules), divisor: lsystem.properties.divisor};
 	var itObj = {iterations: maxIterations};
 
 	gui = new dat.GUI();
-	var axiomCon = gui.add(datObj, 'axiom');
+
+	// Re-run LSystem if parameters for iteration are changed
+	var axiomCon = gui.add(lsystem, 'axiom');
 	axiomCon.onFinishChange(function(value) {
 		lsystem.axiom = datObj.axiom;
 		runSystem();
@@ -103,17 +112,14 @@ var configureGUI = function() {
 		lsystem = new LSystem(lsystem.axiom, JSON.parse(datObj.rules), lsystem.properties);
 		runSystem();
 	});
-	var angleCon = gui.add(datObj, 'angle', 0, 180);
-	angleCon.onFinishChange(function(value) {
-		lsystem = new LSystem(lsystem.axiom, lsystem.rules, {angle: datObj.angle * (Math.PI/180), distance: 0, divisor: lsystem.properties.divisor});
-		runSystem();
-	});
-	var iterationsCon = gui.add(itObj, 'iterations', 0, 6).step(1);
+
+	// Parameters that do not require re-instancing of LSystem
+	var angleCon = gui.add(lsystem.properties, 'angle', 0, Math.PI);
+	var iterationsCon = gui.add(itObj, 'iterations', 0, 15).step(1);
 	iterationsCon.onFinishChange(function(value) {
 		maxIterations = value;
 		runSystem();
 	});
-
 };
 
 var animationLoop;

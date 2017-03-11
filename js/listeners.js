@@ -22,7 +22,7 @@ function pan(deltaX, deltaY) {
 }
 
 function zoom(factor) {
-	lsystem.properties.distance /= factor;
+	distance /= factor;
 }
 
 function onMouseMove() {
@@ -43,11 +43,17 @@ function onScroll() {
 function onKeyDown() {
 	switch(event.keyCode) {
 		case 38:
-			exampleindex++;
+			if(exampleindex == examples.length - 1)
+				exampleindex = 0;
+			else
+				exampleindex++;
 			newSystem();
 			break;
 		case 40:
-			exampleindex--;
+			if(exampleindex == 0)
+				exampleindex = examples.length - 1;
+			else
+				exampleindex--;
 			newSystem();
 			break;
 	}
