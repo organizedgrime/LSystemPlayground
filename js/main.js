@@ -1,19 +1,7 @@
 // Initialize global variables
 var canv, lsystem, gui;
-var guiproperties = { hue: 0, dhue: 0, pos: [], zoom: 0, iterations: 0, rotation: 0 };
-var exampleindex = 0;
-var examples = [
-	new LSystem('F-F-F-F-F-F', {'F':'F-F++F-F'}, {angle: Math.PI/3, zoom: 55}),
-	new LSystem('FX', {'X': 'X+YF+', 'Y': '-FX-Y'}, {angle: Math.PI/2, zoom: 17000, defit: 11}),
-	new LSystem('+X', {'X': 'F−[[X]+X]+F[+FX]−X', 'F': 'FF'}, {angle: 25 * (Math.PI / 180), zoom: 400, defit: 6}),
-	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-F-F+F'}, {angle: Math.PI/2, zoom: 70, defit: 4}),
-	new LSystem('F-F-F-F', {'F': 'FF-F-F-F-FF'}, {angle: Math.PI/2, zoom: 100, defit: 4}),
-	new LSystem('F-F-F-F', {'F': 'FF-F+F-F-FF'}, {angle: Math.PI/2, zoom: 100, defit: 4}),
-	new LSystem('F-F-F-F', {'F': 'FF-F--F-F'}, {angle: Math.PI/2, zoom: 100, defit: 4}),
-	new LSystem('F-F-F-F', {'F': 'F-FF--F-F'}, {angle: Math.PI/2, zoom: 250, defit: 4}),
-	new LSystem('F-F-F-F', {'F': 'F-F+F-F-F'}, {angle: Math.PI/2, zoom: 250, defit: 4}),
-	new LSystem('-L', {'L': 'LF+RFR+FL-F-LFLFL-FRFR+', 'R': '-LFLF+RFRFR+F+RF-LFL-FR'}, {angle: Math.PI/2, zoom: 100, defit: 4})
-];
+var guiproperties = { hue: 0, dhue: 0, pos: [], zoom: 50, iterations: 0, rotation: 0 };
+var afolder, lfolder;
 
 var initCanvas = function() {
 	// Initialize canvases
@@ -25,45 +13,52 @@ var initCanvas = function() {
 
 	lsystem = new LSystem('', '{}', {angle: 0});
 	configureGUI();
-	runSystem();
 	configureEvents();
+
+	runSystem();
 	requestAnimationFrame(animationLoop);
 };
 
 var runSystem = function() {
+	// Resets the sentence of the lsystem so that new rules are not applied to the existing sentence
 	lsystem.sentence = lsystem.axiom;
-	guiproperties.zoom = 50;
+
+	// Iterate the lsystem as specified
 	for(var i = 0; i < guiproperties.iterations; i++) {
 		lsystem.iterate();
-		//console.log(lsystem.rules);
-		guiproperties.zoom /= 2;
 	}
 
+	// Reset current location in case user has been panning
 	guiproperties.pos = [canv.width/2, canv.height/2];
 };
 
 var drawLine = function(turtle) {
+	// Move to start point
 	ctx.beginPath();
 	ctx.moveTo(turtle.state[0], turtle.state[1]);
 	
-	turtle.state[0] += Math.sin(turtle.state[2] * (Math.PI / 180)) * guiproperties.zoom;
-	turtle.state[1] += Math.cos(turtle.state[2] * (Math.PI / 180)) * guiproperties.zoom;
+	// Determine end point/new pos
+	var rads = turtle.state[2] * (Math.PI / 180);
+	turtle.state[0] += Math.sin(rads) * guiproperties.zoom;
+	turtle.state[1] += Math.cos(rads) * guiproperties.zoom;
 	
+	// Draw line to end point
 	ctx.lineTo(turtle.state[0], turtle.state[1]);
 	ctx.strokeStyle = rgbToHex(hsvToRgb(guiproperties.hue, 1, 1));
 	ctx.stroke();
 	ctx.closePath();
 };
 
-// Plant renderer obj
+// Renderer obj
 var renderer = function(lsystem) {
 	var turtle = new Turtle(
-		// Initial state
+		// Initial state before any system is drawn
 		[guiproperties.pos[0], guiproperties.pos[1], guiproperties.rotation]
 	);
 	guiproperties.hue = 0;
 	for(var i = 0; i < lsystem.sentence.length; i++){
 		switch(lsystem.sentence.charAt(i)) {
+		// F and G are both draw line and move forward
 		case 'F':
 			drawLine(turtle);
 			guiproperties.hue += (guiproperties.dhue / 10000);
@@ -72,52 +67,46 @@ var renderer = function(lsystem) {
 			drawLine(turtle);
 			guiproperties.hue += (guiproperties.dhue / 10000);
 			break;
+		// - is rotate left and + is rotate right
 		case '-':
 			turtle.state[2] -= lsystem.properties.angle;
 			break; 
 		case '+':
 			turtle.state[2] += lsystem.properties.angle;
 			break;
+		// [ is push turtle state to stack and ] is pop from it
 		case '[':
-			//console.log("before push: " + turtle.state);
 			turtle.stack.push(JSON.parse(JSON.stringify(turtle.state)));
 			break;
 		case ']':
 			turtle.state = turtle.stack.pop();
-			//console.log("after pop: " + turtle.state);
 			break;
 		}
 	}
 };
 
 var configureGUI = function() {
+	// Initialize GUI and load in examples
 	gui = new dat.GUI({ load: getExamples(), preset: 'Koch' });
 	gui.remember(lsystem.properties);
 	gui.remember(lsystem);
 	gui.remember(guiproperties);
 
-	var lfolder = gui.addFolder('LSystem');
+	// LSystem folder containing variables pertinent to the construction of the system
+	lfolder = gui.addFolder('LSystem');
 	lfolder.add(lsystem, 'axiom').onFinishChange(function(){runSystem();});
 	lfolder.add(lsystem, 'rules').onFinishChange(function(){runSystem();});
 	lfolder.add(lsystem.properties, 'angle', 0, 180);
 	
-	var afolder = gui.addFolder('Appearance');
+	// Appearance folder containing variables pertinent to the user experience
+	afolder = gui.addFolder('Appearance');
 	afolder.add(guiproperties, 'dhue', 0, 150);
 	afolder.add(guiproperties, 'iterations', 0, 16).step(1).onFinishChange(function(){runSystem();});
 	afolder.add(guiproperties, 'zoom', 0, 100);
 	afolder.add(guiproperties, 'rotation', 0, 360);
 };
 
-/*
-	new LSystem("F-F-F-F", {"F": "FF-F-F-F-F-F+F"}, {angle: Math.PI/2, zoom: 70, defit: 4}),
-	new LSystem("F-F-F-F", {"F": "FF-F-F-F-FF"}, {angle: Math.PI/2, zoom: 100, defit: 4}),
-	new LSystem("F-F-F-F", {"F": "FF-F+F-F-FF"}, {angle: Math.PI/2, zoom: 100, defit: 4}),
-	new LSystem("F-F-F-F", {"F": "FF-F--F-F"}, {angle: Math.PI/2, zoom: 100, defit: 4}),
-	new LSystem("F-F-F-F", {"F": "F-FF--F-F"}, {angle: Math.PI/2, zoom: 250, defit: 4}),
-	new LSystem("F-F-F-F", {"F": "F-F+F-F-F"}, {angle: Math.PI/2, zoom: 250, defit: 4}),
-	new LSystem("-L", {"L": "LF+RFR+FL-F-LFLFL-FRFR+", "R": "-LFLF+RFRFR+F+RF-LFL-FR"}, {angle: Math.PI/2, zoom: 100, defit: 4})
-*/
-
+// Start animation loop
 var animationLoop;
 (function(){
 animationLoop = function() {

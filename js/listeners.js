@@ -21,6 +21,7 @@ function pan(deltaX, deltaY) {
 
 function zoom(factor) {
 	guiproperties.zoom /= factor;
+	afolder.__controllers[2].updateDisplay();
 }
 
 function onMouseMove() {
