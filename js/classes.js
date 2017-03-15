@@ -1,7 +1,8 @@
 class LSystem {
-	constructor(axiom, rules, properties) {
+	constructor(axiom, constants, rules, properties) {
 		this.axiom = axiom;
 		this.sentence = this.axiom;
+		this.constants = constants;
 		this.rules = rules;
 		this.properties = properties;
 		this.iterate = function() {

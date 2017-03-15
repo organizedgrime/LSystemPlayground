@@ -1,5 +1,5 @@
 // Initialize global variables
-var canv, lsystem, gui;
+var canv, ctx, lsystem, gui;
 var guiproperties = { hue: 0, dhue: 0, pos: [], zoom: 50, iterations: 0, rotation: 0 };
 var afolder, lfolder;
 
@@ -11,7 +11,7 @@ var initCanvas = function() {
 	canv.width = window.innerWidth;
 	canv.height = window.innerHeight;
 
-	lsystem = new LSystem('', '{}', {angle: 0});
+	lsystem = new LSystem('', '', '{}', {angle: 0});
 	configureGUI();
 	configureEvents();
 
@@ -56,38 +56,36 @@ var renderer = function(lsystem) {
 		[guiproperties.pos[0], guiproperties.pos[1], guiproperties.rotation]
 	);
 	guiproperties.hue = 0;
-	for(var i = 0; i < lsystem.sentence.length; i++){
-		switch(lsystem.sentence.charAt(i)) {
-		// F and G are both draw line and move forward
-		case 'F':
+	for(var i = 0; i < lsystem.sentence.length; i++) {
+		if(lsystem.constants.includes(lsystem.sentence.charAt(i))) {
+			// Draw line, move forward, and adjust hue
 			drawLine(turtle);
 			guiproperties.hue += (guiproperties.dhue / 10000);
-			break;
-		case 'G':
-			drawLine(turtle);
-			guiproperties.hue += (guiproperties.dhue / 10000);
-			break;
-		// - is rotate left and + is rotate right
-		case '-':
-			turtle.state[2] -= lsystem.properties.angle;
-			break; 
-		case '+':
-			turtle.state[2] += lsystem.properties.angle;
-			break;
-		// [ is push turtle state to stack and ] is pop from it
-		case '[':
-			turtle.stack.push(JSON.parse(JSON.stringify(turtle.state)));
-			break;
-		case ']':
-			turtle.state = turtle.stack.pop();
-			break;
+		}
+		else {
+			switch(lsystem.sentence.charAt(i)) {
+			// - is rotate left and + is rotate right
+			case '-':
+				turtle.state[2] -= lsystem.properties.angle;
+				break; 
+			case '+':
+				turtle.state[2] += lsystem.properties.angle;
+				break;
+			// [ is push turtle state to stack and ] is pop from it
+			case '[':
+				turtle.stack.push(JSON.parse(JSON.stringify(turtle.state)));
+				break;
+			case ']':
+				turtle.state = turtle.stack.pop();
+				break;
+			}
 		}
 	}
 };
 
 var configureGUI = function() {
 	// Initialize GUI and load in examples
-	gui = new dat.GUI({ load: getExamples(), preset: 'Koch' });
+	gui = new dat.GUI({ load: getExamples(), preset: 'Koch Snowflake' });
 	gui.remember(lsystem.properties);
 	gui.remember(lsystem);
 	gui.remember(guiproperties);
@@ -95,12 +93,13 @@ var configureGUI = function() {
 	// LSystem folder containing variables pertinent to the construction of the system
 	lfolder = gui.addFolder('LSystem');
 	lfolder.add(lsystem, 'axiom').onFinishChange(function(){runSystem();});
+	lfolder.add(lsystem, 'constants');
 	lfolder.add(lsystem, 'rules').onFinishChange(function(){runSystem();});
 	lfolder.add(lsystem.properties, 'angle', 0, 180);
 	
 	// Appearance folder containing variables pertinent to the user experience
 	afolder = gui.addFolder('Appearance');
-	afolder.add(guiproperties, 'dhue', 0, 150);
+	afolder.add(guiproperties, 'dhue', 0, 100);
 	afolder.add(guiproperties, 'iterations', 0, 16).step(1).onFinishChange(function(){runSystem();});
 	afolder.add(guiproperties, 'zoom', 0, 100);
 	afolder.add(guiproperties, 'rotation', 0, 360);
